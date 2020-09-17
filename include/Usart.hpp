@@ -7,7 +7,7 @@ class Usart
 
 public:
   static void init();
-  static void print_ln(const char *s);
+  static void print_ln(const char *s, ...);
 
 private:
   static void print_c(const char c);

@@ -1,5 +1,7 @@
-#include "usart.hpp"
+#include "Usart.hpp"
 #include <avr/io.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <util/setbaud.h>
 
 void Usart::init()
@@ -22,12 +24,19 @@ void Usart::init()
   Usart::print_c('\n');
 }
 
-void Usart::print_ln(const char *s)
+void Usart::print_ln(const char *s, ...)
 {
-  while (*s)
+  char buffer[50];
+  char *buffer_ptr = buffer;
+  va_list args;
+  va_start(args, s);
+  vsprintf(buffer, s, args);
+  va_end(args);
+
+  while (*buffer_ptr)
   {
-    Usart::print_c(*s);
-    s++;
+    Usart::print_c(*buffer_ptr);
+    buffer_ptr++;
   }
 
   Usart::print_c('\r');
