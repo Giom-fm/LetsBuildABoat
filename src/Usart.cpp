@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <util/setbaud.h>
 
+#define BUFFER_SIZE 50
+
 void Usart::init()
 {
   // Enable UART Transmitter mode
@@ -26,7 +28,7 @@ void Usart::init()
 
 void Usart::print_ln(const char *s, ...)
 {
-  char buffer[50];
+  char buffer[BUFFER_SIZE];
   char *buffer_ptr = buffer;
   va_list args;
   va_start(args, s);

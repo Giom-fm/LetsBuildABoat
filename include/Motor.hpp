@@ -6,6 +6,7 @@ typedef struct
 {
   bool enable;
   int8_t speed;
+  float current;
 } MotorStatus;
 
 class Motor

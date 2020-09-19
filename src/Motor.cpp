@@ -1,4 +1,5 @@
 #include "Motor.hpp"
+#include "Adc.hpp"
 #include "Util.hpp"
 #include <avr/io.h>
 #include <stdlib.h>
@@ -9,12 +10,14 @@
 #define RIGHT_BACKWARD OCR2B
 #define LEFT_DIAG PIND2
 #define RIGHT_DIAG PIND4
+#define LEFT_CURRENT 0
+#define RIGHT_CURRENT 1
 
 Motor::Motor()
 {
 
-  Motor::status_left = {.enable = 0, .speed = 0};
-  Motor::status_right = {.enable = 0, .speed = 0};
+  Motor::status_left = {.enable = 0, .speed = 0, .current = 0};
+  Motor::status_right = {.enable = 0, .speed = 0, .current = 0};
 
   // Init Timer 0 For Left Motor
   // Set Fast-PWM-Mode
@@ -43,6 +46,8 @@ void Motor::get_status(MotorStatus *left, MotorStatus *right)
 {
   Motor::status_left.enable = (PIND & (1 << LEFT_DIAG)) >> LEFT_DIAG;
   Motor::status_right.enable = (PIND & (1 << RIGHT_DIAG)) >> RIGHT_DIAG;
+  Motor::status_left.current = Adc::read_voltage_avg(LEFT_CURRENT, 10);
+  Motor::status_right.current = Adc::read_voltage_avg(RIGHT_CURRENT, 10);
 
   *left = Motor::status_left;
   *right = Motor::status_right;
