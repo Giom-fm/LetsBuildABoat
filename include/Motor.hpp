@@ -2,21 +2,18 @@
 
 #include <stdint.h>
 
-typedef struct
-{
+typedef struct {
   bool enable;
   int8_t speed;
   float current;
 } MotorStatus;
 
-class Motor
-{
-
-private:
+class Motor {
+ private:
   MotorStatus status_left;
   MotorStatus status_right;
 
-public:
+ public:
   Motor();
   void left(int8_t speed_percent);
   void right(int8_t speed_percent);

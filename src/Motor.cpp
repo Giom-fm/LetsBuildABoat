@@ -1,8 +1,10 @@
 #include "Motor.hpp"
-#include "Adc.hpp"
-#include "Util.hpp"
+
 #include <avr/io.h>
 #include <stdlib.h>
+
+#include "Adc.hpp"
+#include "Util.hpp"
 
 #define LEFT_FORWARD OCR0A
 #define LEFT_BACKWARD OCR0B
@@ -13,9 +15,7 @@
 #define LEFT_CURRENT 0
 #define RIGHT_CURRENT 1
 
-Motor::Motor()
-{
-
+Motor::Motor() {
   Motor::status_left = {.enable = 0, .speed = 0, .current = 0};
   Motor::status_right = {.enable = 0, .speed = 0, .current = 0};
 
@@ -42,8 +42,7 @@ Motor::Motor()
   DDRD &= ~((1 << PORTD2) | (1 << PORTD4));
 }
 
-void Motor::get_status(MotorStatus *left, MotorStatus *right)
-{
+void Motor::get_status(MotorStatus *left, MotorStatus *right) {
   Motor::status_left.enable = (PIND & (1 << LEFT_DIAG)) >> LEFT_DIAG;
   Motor::status_right.enable = (PIND & (1 << RIGHT_DIAG)) >> RIGHT_DIAG;
   Motor::status_left.current = Adc::read_voltage_avg(LEFT_CURRENT, 10);
@@ -53,58 +52,44 @@ void Motor::get_status(MotorStatus *left, MotorStatus *right)
   *right = Motor::status_right;
 }
 
-void Motor::left(int8_t speed_percent)
-{
+void Motor::left(int8_t speed_percent) {
   uint8_t speed = Util::map(abs(speed_percent), 0, 100, 0, 255);
   Motor::status_left.speed = speed_percent;
 
-  if (speed_percent > 0)
-  {
+  if (speed_percent > 0) {
     LEFT_FORWARD = speed;
     LEFT_BACKWARD = 0;
-  }
-  else if (speed_percent < 0)
-  {
+  } else if (speed_percent < 0) {
     LEFT_FORWARD = 0;
     LEFT_BACKWARD = speed;
-  }
-  else
-  {
+  } else {
     LEFT_FORWARD = 0;
     LEFT_BACKWARD = 0;
   }
 }
 
-void Motor::right(int8_t speed_percent)
-{
+void Motor::right(int8_t speed_percent) {
   uint8_t speed = Util::map(abs(speed_percent), 0, 100, 0, 255);
   Motor::status_right.speed = speed_percent;
 
-  if (speed_percent > 0)
-  {
+  if (speed_percent > 0) {
     RIGHT_FORWARD = speed;
     RIGHT_BACKWARD = 0;
-  }
-  else if (speed_percent < 0)
-  {
+  } else if (speed_percent < 0) {
     RIGHT_FORWARD = 0;
     RIGHT_BACKWARD = speed;
-  }
-  else
-  {
+  } else {
     RIGHT_FORWARD = 0;
     RIGHT_BACKWARD = 0;
   }
 }
 
-void Motor::left_stop()
-{
+void Motor::left_stop() {
   LEFT_FORWARD = 0;
   LEFT_BACKWARD = 0;
 }
 
-void Motor::right_stop()
-{
+void Motor::right_stop() {
   RIGHT_FORWARD = 0;
   RIGHT_BACKWARD = 0;
 }
