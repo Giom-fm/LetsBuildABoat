@@ -1,37 +1,22 @@
 #include "Twi.hpp"
 
-#include <util/twi.h>
+
 
 #include "Usart.hpp"
 
 #define WAIT_FOR(bit) while (!(TWCR & (1 << bit)))
 #define TWI_STATUS (TWSR & TW_NO_INFO)
+#define TWI_START TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN)
 
-void Twi::start(uint8_t address) {
-  while (1) {
-    Usart::print_ln("TWI Start");
-    // Clear Interrupt, Set START and Enable TWI
-    TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
-    // Wait until interrupt-flag has been set
-    WAIT_FOR(TWINT);
+twi_status_t Twi::start(uint8_t address) {
+  Usart::print_ln("TWI Start");
 
-    // check Status - if Fail -> Retry
-    if (TWI_STATUS != TW_START && TWI_STATUS != TW_REP_START) {
-      Usart::print_ln("TWI Start-Error: Startcondition not set 0x%x",
-                      TWI_STATUS);
-      continue;
-    }
+  // Clear Interrupt, Set START and Enable TWI
+  TWI_START;
+  // Wait until interrupt-flag has been set
+  WAIT_FOR(TWINT);
 
-    uint8_t status = Twi::write(address);
-
-    // Check Status - If Fail Stop and retry
-    if (status != TW_MT_SLA_ACK) {
-      Usart::print_ln("TWI Start-Error: ACK not received 0x%x", status);
-      Twi::stop();
-      continue;
-    }
-    break;
-  }
+  return TWI_STATUS == TW_REP_START ? Twi::write(address) : TWI_STATUS;
 }
 
 void Twi::stop() {
@@ -53,8 +38,7 @@ twi_status_t Twi::write(uint8_t reg, char data) {
   // Set Register
   Twi::write(reg);
   // Set Data
-  Twi::write(data);
-  return TWI_STATUS;
+  return Twi::write(data);
 }
 
 char Twi::read(bool acknowledge) {
