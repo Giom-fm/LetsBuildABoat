@@ -1,7 +1,5 @@
 #include "Twi.hpp"
 
-
-
 #include "Usart.hpp"
 
 #define WAIT_FOR(bit) while (!(TWCR & (1 << bit)))
@@ -16,7 +14,16 @@ twi_status_t Twi::start(uint8_t address) {
   // Wait until interrupt-flag has been set
   WAIT_FOR(TWINT);
 
-  return TWI_STATUS == TW_REP_START ? Twi::write(address) : TWI_STATUS;
+  if (TWI_STATUS != TW_START) {
+    return TWI_START_NOT_SET;
+  }
+
+  twi_status_t status = Twi::write(address);
+
+  if (status != TWI_DATA_NOT_SET) {
+    return TWI_ADDRESS_NOT_SET;
+  }
+  return TWI_OK;
 }
 
 void Twi::stop() {
@@ -31,14 +38,35 @@ twi_status_t Twi::write(char data) {
   TWCR = (1 << TWINT) | (1 << TWEN);
   // Wait until interrupt-flag has been set
   WAIT_FOR(TWINT);
-  return TWI_STATUS;
+
+  if (TWI_STATUS != TW_MT_SLA_ACK) {
+    return TWI_DATA_NOT_SET;
+  }
+
+  return TWI_OK;
 }
 
 twi_status_t Twi::write(uint8_t reg, char data) {
+  twi_status_t status;
   // Set Register
-  Twi::write(reg);
+  status = Twi::write(reg);
+  if (status != TWI_OK) {
+    return TWI_REGISTER_NOT_SET;
+  }
   // Set Data
   return Twi::write(data);
+}
+
+twi_status_t Twi::write(uint8_t address, uint8_t reg, char data) {
+  twi_status_t status;
+
+  status = Twi::start(address);
+  if (status == TWI_OK) {
+    status = Twi::write(reg, data);
+  }
+
+  Twi::stop();
+  return status;
 }
 
 char Twi::read(bool acknowledge) {
@@ -54,4 +82,26 @@ char Twi::read(bool acknowledge) {
   WAIT_FOR(TWINT);
 
   return TWDR;
+}
+
+twi_status_t Twi::read(int16_t *data, bool word, uint8_t write_address,
+                       uint8_t read_address, uint8_t reg) {
+  int16_t result_h = 0, result_l = 0;
+  twi_status_t status;
+
+  status = Twi::start(write_address);
+  if (status != TWI_OK) return status;
+
+  status = Twi::write(reg);
+  if (status != TWI_OK) return TWI_REGISTER_NOT_SET;
+
+  status = Twi::start(read_address);
+  if (status != TWI_OK) return status;
+
+  result_l = Twi::read(word);
+  if (word) result_h = Twi::read(false);
+
+  *data = (result_h << 8) | (result_l & 0xff);
+
+  return TWI_OK;
 }
