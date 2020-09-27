@@ -39,13 +39,21 @@ void Twi::stop() {
   WAIT_FOR(TWSTO);
 }
 
-uint8_t Twi::write(char data) {
+twi_status_t Twi::write(char data) {
   // Set Data
   TWDR = data;
   // Clear TWI interrupt flag, Enable TWI
   TWCR = (1 << TWINT) | (1 << TWEN);
   // Wait until interrupt-flag has been set
   WAIT_FOR(TWINT);
+  return TWI_STATUS;
+}
+
+twi_status_t Twi::write(uint8_t reg, char data) {
+  // Set Register
+  Twi::write(reg);
+  // Set Data
+  Twi::write(data);
   return TWI_STATUS;
 }
 
