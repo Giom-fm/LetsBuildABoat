@@ -48,6 +48,8 @@
 #define ACCEL_CONFIG_AXIS ((1 << Zen_XL) | (1 << Yen_XL) | (1 << Xen_XL))
 // Set speed to 416Hz
 #define ACCEL_CONFIG_CLOCK ((1 << ODR_XL2) | (1 << ODR_XL1))
+// Buffersize
+#define BUFFER_SIZE 6
 
 // #############################################################################
 
@@ -64,10 +66,10 @@ Accelerometer::Accelerometer() {
 }
 
 bool Accelerometer::has_next_value() {
-  int16_t data;
   twi_status_t status;
+  int8_t data;
 
-  status = Twi::read(&data, false, WRITE_ADDRESS, READ_ADDRESS, STATUS_REG);
+  status = Twi::read(&data, 1, WRITE_ADDRESS, READ_ADDRESS, STATUS_REG);
   if (status != TWI_OK) {
     Usart::print_ln("Accelerometer::has_next_value - Twi Error");
   }
@@ -75,20 +77,15 @@ bool Accelerometer::has_next_value() {
 }
 
 acceleration_t Accelerometer::read() {
-  acceleration_t result;
   twi_status_t status;
+  int8_t buffer[BUFFER_SIZE];
 
-  status = Twi::read(&result.x, true, WRITE_ADDRESS, READ_ADDRESS, OUTX_L_XL);
+  status =
+      Twi::read(buffer, BUFFER_SIZE, WRITE_ADDRESS, READ_ADDRESS, OUTX_L_XL);
   if (status != TWI_OK)
-    Usart::print_ln("Accelerometer::read - Error reading X");
+    Usart::print_ln("Accelerometer::read - Error reading Values");
 
-  status = Twi::read(&result.y, true, WRITE_ADDRESS, READ_ADDRESS, OUTY_L_XL);
-  if (status != TWI_OK)
-    Usart::print_ln("Accelerometer::read - Error reading Y");
-
-  status = Twi::read(&result.z, true, WRITE_ADDRESS, READ_ADDRESS, OUTZ_L_XL);
-  if (status != TWI_OK)
-    Usart::print_ln("Accelerometer::read - Error reading Z");
-
-  return result;
+  return {.x = (buffer[1] << 8) | (buffer[0] & 0xff),
+          .y = (buffer[3] << 8) | (buffer[2] & 0xff),
+          .z = (buffer[5] << 8) | (buffer[4] & 0xff)};
 }

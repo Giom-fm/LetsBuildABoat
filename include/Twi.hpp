@@ -14,12 +14,14 @@ class Twi {
  private:
   static twi_status_t write(char data);
   static twi_status_t write(uint8_t reg, char data);
-  static char read(bool acknowledge);
+  static char read_byte(bool acknowledge);
 
  public:
   static twi_status_t start(uint8_t address);
   static void stop();
-  static twi_status_t read(int16_t *data, bool word, uint8_t write_address,
-                           uint8_t read_address, uint8_t reg);
+  static twi_status_t read(int8_t *buffer, uint8_t length,
+                           uint8_t write_address, uint8_t read_address,
+                           uint8_t reg);
+
   static twi_status_t write(uint8_t address, uint8_t reg, char data);
 };

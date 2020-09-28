@@ -69,7 +69,7 @@ twi_status_t Twi::write(uint8_t address, uint8_t reg, char data) {
   return status;
 }
 
-char Twi::read(bool acknowledge) {
+char Twi::read_byte(bool acknowledge) {
   // Clear TWI interrupt flag, Enable TWI
   // If needed, set acknowledge bit
   if (acknowledge) {
@@ -84,9 +84,8 @@ char Twi::read(bool acknowledge) {
   return TWDR;
 }
 
-twi_status_t Twi::read(int16_t *data, bool word, uint8_t write_address,
+twi_status_t Twi::read(int8_t *buffer, uint8_t length, uint8_t write_address,
                        uint8_t read_address, uint8_t reg) {
-  int16_t result_h = 0, result_l = 0;
   twi_status_t status;
 
   status = Twi::start(write_address);
@@ -98,10 +97,12 @@ twi_status_t Twi::read(int16_t *data, bool word, uint8_t write_address,
   status = Twi::start(read_address);
   if (status != TWI_OK) return status;
 
-  result_l = Twi::read(word);
-  if (word) result_h = Twi::read(false);
+  for (uint8_t i = 0; i < length; ++i) {
+    *buffer = Twi::read_byte(i < length);
+    ++buffer;
+  }
 
-  *data = (result_h << 8) | (result_l & 0xff);
+  //*data = (result_h << 8) | (result_l & 0xff);
 
   return TWI_OK;
 }
