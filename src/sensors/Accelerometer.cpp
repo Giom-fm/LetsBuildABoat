@@ -1,4 +1,4 @@
-#include "Accelerometer.hpp"
+#include "sensors/Accelerometer.hpp"
 
 #include "Twi.hpp"
 #include "Usart.hpp"
@@ -48,9 +48,6 @@
 #define ACCEL_CONFIG_AXIS ((1 << Zen_XL) | (1 << Yen_XL) | (1 << Xen_XL))
 // Set speed to 416Hz
 #define ACCEL_CONFIG_CLOCK ((1 << ODR_XL2) | (1 << ODR_XL1))
-// Buffersize
-#define BUFFER_SIZE 6
-
 // #############################################################################
 
 Accelerometer::Accelerometer() {
@@ -58,34 +55,37 @@ Accelerometer::Accelerometer() {
 
   status = Twi::write(WRITE_ADDRESS, CTRL9_XL, ACCEL_CONFIG_AXIS);
   if (status != TWI_OK)
-    Usart::print_ln("Accelerometer::Accelerometer - Axis init Error");
+    Usart::print_ln("Accelerometer::Accelerometer - Axis init Error: %d",
+                    status);
 
   status = Twi::write(WRITE_ADDRESS, CTRL1_XL, ACCEL_CONFIG_CLOCK);
   if (status != TWI_OK)
-    Usart::print_ln("Accelerometer::Accelerometer - Clock init Error");
+    Usart::print_ln("Accelerometer::Accelerometer - Clock init Error: %d",
+                    status);
 }
 
 bool Accelerometer::has_next_value() {
+  bool result;
   twi_status_t status;
-  int8_t data;
+  status = TwiSensor::has_next_value(&result, WRITE_ADDRESS, READ_ADDRESS,
+                                     STATUS_REG, XLDA);
 
-  status = Twi::read(&data, 1, WRITE_ADDRESS, READ_ADDRESS, STATUS_REG);
   if (status != TWI_OK) {
-    Usart::print_ln("Accelerometer::has_next_value - Twi Error");
+    Usart::print_ln("Accelerometer::has_next_value - Twi Error: %d", status);
+    return false;
+  } else {
+    return result;
   }
-  return data & (1 << XLDA);
 }
 
 acceleration_t Accelerometer::read() {
   twi_status_t status;
-  int8_t buffer[BUFFER_SIZE];
+  raw_axis_values_t data;
 
-  status =
-      Twi::read(buffer, BUFFER_SIZE, WRITE_ADDRESS, READ_ADDRESS, OUTX_L_XL);
+  status = TwiSensor::read(&data, WRITE_ADDRESS, READ_ADDRESS, OUTX_L_XL);
   if (status != TWI_OK)
-    Usart::print_ln("Accelerometer::read - Error reading Values");
+    Usart::print_ln("Accelerometer::read - Twi Error: %d", status);
 
-  return {.x = (buffer[1] << 8) | (buffer[0] & 0xff),
-          .y = (buffer[3] << 8) | (buffer[2] & 0xff),
-          .z = (buffer[5] << 8) | (buffer[4] & 0xff)};
+  // TODO Convert to acceleration
+  return {.x = data.x, .y = data.y, .z = data.z};
 }
